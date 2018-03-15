@@ -1,3 +1,19 @@
+/**
+ * Copyright (c) 2016-present, Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "caffe2/operators/generate_proposals_op.h"
 #include "caffe2/operators/generate_proposals_op_util_boxes.h"
 #include "generate_proposals_op_util_nms.h"
@@ -141,8 +157,12 @@ void GenerateProposalsOp<CPUContext>::ProposalsForOneImage(
 
   // Transform anchors into proposals via bbox transformations
   static const std::vector<float> bbox_weights{1.0, 1.0, 1.0, 1.0};
-  auto proposals =
-      utils::bbox_transform(all_anchors.array(), bbox_deltas, bbox_weights);
+  auto proposals = utils::bbox_transform(
+      all_anchors.array(),
+      bbox_deltas,
+      bbox_weights,
+      utils::BBOX_XFORM_CLIP_DEFAULT,
+      correct_transform_coords_);
 
   // 2. clip proposals to image (may result in proposals with zero area
   // that will be removed in the next step)
@@ -280,9 +300,9 @@ OPERATOR_SCHEMA(GenerateProposals)
     .NumOutputs(2)
     .SetDoc(R"DOC(
 Generate bounding box proposals for Faster RCNN. The propoasls are generated for
-  a list of images based on image score 'score', bounding box regression result
-  'deltas' as well as predefined bounding box shapes 'anchors'. Greedy
-  non-maximum suppression is applied to generate the final bounding boxes.
+a list of images based on image score 'score', bounding box regression result
+'deltas' as well as predefined bounding box shapes 'anchors'. Greedy
+non-maximum suppression is applied to generate the final bounding boxes.
 )DOC")
     .Arg("spatial_scale", "(float) spatial scale")
     .Arg("pre_nms_topN", "(int) RPN_PRE_NMS_TOP_N")
